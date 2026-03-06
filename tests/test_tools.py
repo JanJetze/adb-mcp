@@ -5,6 +5,7 @@ from adb_mcp.tools.input import _escape_text, press_key
 from adb_mcp.tools.app import launch_app
 from adb_mcp.tools.logs import read_logs
 from adb_mcp.tools.device import device_connect, _deduplicate_devices
+from adb_mcp.tools.app import install_app
 
 
 class TestEscapeText:
@@ -74,6 +75,20 @@ class TestReadLogs:
         read_logs(lines=100)
         args = mock_exec.call_args[0]
         assert "100" in args
+
+
+class TestInstallApp:
+    @patch("adb_mcp.tools.app.adb_exec", return_value="Success")
+    def test_install(self, mock_exec):
+        result = install_app("/tmp/app.apk")
+        mock_exec.assert_called_once_with("install", "/tmp/app.apk", timeout=120)
+        assert "Success" in result
+
+    @patch("adb_mcp.tools.app.adb_exec", return_value="Success")
+    def test_reinstall(self, mock_exec):
+        result = install_app("/tmp/app.apk", reinstall=True)
+        mock_exec.assert_called_once_with("install", "-r", "/tmp/app.apk", timeout=120)
+        assert "Success" in result
 
 
 class TestDeduplicateDevices:

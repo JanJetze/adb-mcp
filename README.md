@@ -68,6 +68,7 @@ Add to your Claude Code settings (`~/.claude/settings.json` under `mcpServers`),
 | `input_text` | Type text into the focused field |
 | `press_key` | Press a key (back, home, enter, etc.) |
 | `launch_app` | Launch an app by package name |
+| `install_app` | Install an APK from the host machine onto the device (supports `reinstall` flag to keep data) |
 | `read_logs` | Read logcat output with optional filtering |
 | `shell` | Run an arbitrary adb shell command |
 
