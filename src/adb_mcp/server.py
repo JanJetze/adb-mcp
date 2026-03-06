@@ -37,6 +37,7 @@ volume_down, power, or menu.
 
 ## Other tools
 - `launch_app(package)` — launch an app (e.g., "com.android.settings").
+- `install_app(apk_path)` — install an APK from the host machine onto the device.
 - `read_logs(filter, lines)` — read logcat output, optionally filtered.
 - `shell(command)` — run any adb shell command as an escape hatch.
 
@@ -121,6 +122,13 @@ def press_key(key: str) -> str:
 def launch_app(package: str) -> str:
     """Launch an app by package name (e.g. com.android.settings)."""
     return app.launch_app(package)
+
+
+@mcp.tool()
+def install_app(apk_path: str, reinstall: bool = False) -> str:
+    """Install an APK file from the host machine onto the device.
+    Set reinstall=True to replace an existing installation while keeping data."""
+    return app.install_app(apk_path, reinstall)
 
 
 @mcp.tool()
