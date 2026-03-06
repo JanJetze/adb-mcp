@@ -37,7 +37,8 @@ volume_down, power, or menu.
 
 ## Other tools
 - `launch_app(package)` — launch an app (e.g., "com.android.settings").
-- `install_app(apk_path)` — install an APK from the host machine onto the device.
+- `install_app(apk_path, reinstall)` — install an APK from the host machine onto the \
+device. Set reinstall=True to replace an existing install while keeping its data.
 - `read_logs(filter, lines)` — read logcat output, optionally filtered.
 - `shell(command)` — run any adb shell command as an escape hatch.
 
