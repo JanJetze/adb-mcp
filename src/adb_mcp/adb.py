@@ -14,10 +14,27 @@ def _find_adb() -> str:
 
 ADB = _find_adb()
 
+_device_serial: str | None = None
+
+
+def set_device_serial(serial: str | None) -> None:
+    global _device_serial
+    _device_serial = serial
+
+
+def get_device_serial() -> str | None:
+    return _device_serial
+
+
+def _base_cmd() -> list[str]:
+    if _device_serial:
+        return [ADB, "-s", _device_serial]
+    return [ADB]
+
 
 def adb_exec(*args: str, timeout: float = 10) -> str:
     result = subprocess.run(
-        [ADB] + list(args),
+        _base_cmd() + list(args),
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -29,7 +46,7 @@ def adb_exec(*args: str, timeout: float = 10) -> str:
 
 def adb_exec_binary(*args: str, timeout: float = 10) -> bytes:
     result = subprocess.run(
-        [ADB] + list(args),
+        _base_cmd() + list(args),
         capture_output=True,
         timeout=timeout,
     )

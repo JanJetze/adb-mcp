@@ -1,11 +1,14 @@
 from unittest.mock import patch, MagicMock
 import subprocess
 
-from adb_mcp.adb import adb_exec, adb_exec_binary
+from adb_mcp.adb import adb_exec, adb_exec_binary, set_device_serial
 
 
 @patch("adb_mcp.adb.ADB", "/usr/bin/adb")
 class TestAdbExec:
+    def setup_method(self):
+        set_device_serial(None)
+
     def test_returns_stdout_on_success(self):
         result = MagicMock(returncode=0, stdout="List of devices attached\n", stderr="")
         with patch("adb_mcp.adb.subprocess.run", return_value=result) as mock_run:
@@ -36,9 +39,22 @@ class TestAdbExec:
             except subprocess.TimeoutExpired:
                 pass
 
+    def test_includes_serial_when_set(self):
+        set_device_serial("192.168.1.10:40845")
+        result = MagicMock(returncode=0, stdout="ok", stderr="")
+        with patch("adb_mcp.adb.subprocess.run", return_value=result) as mock_run:
+            adb_exec("shell", "ls")
+            mock_run.assert_called_once_with(
+                ["/usr/bin/adb", "-s", "192.168.1.10:40845", "shell", "ls"],
+                capture_output=True, text=True, timeout=10,
+            )
+
 
 @patch("adb_mcp.adb.ADB", "/usr/bin/adb")
 class TestAdbExecBinary:
+    def setup_method(self):
+        set_device_serial(None)
+
     def test_returns_bytes_on_success(self):
         result = MagicMock(returncode=0, stdout=b"\x89PNG", stderr=b"")
         with patch("adb_mcp.adb.subprocess.run", return_value=result):
@@ -53,3 +69,13 @@ class TestAdbExecBinary:
                 assert False, "Should have raised"
             except RuntimeError as e:
                 assert "device not found" in str(e)
+
+    def test_includes_serial_when_set(self):
+        set_device_serial("192.168.1.10:40845")
+        result = MagicMock(returncode=0, stdout=b"\x89PNG", stderr=b"")
+        with patch("adb_mcp.adb.subprocess.run", return_value=result) as mock_run:
+            adb_exec_binary("exec-out", "screencap", "-p")
+            mock_run.assert_called_once_with(
+                ["/usr/bin/adb", "-s", "192.168.1.10:40845", "exec-out", "screencap", "-p"],
+                capture_output=True, timeout=10,
+            )

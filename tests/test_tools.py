@@ -1,8 +1,10 @@
 from unittest.mock import patch
 
+from adb_mcp.adb import set_device_serial, get_device_serial
 from adb_mcp.tools.input import _escape_text, press_key
 from adb_mcp.tools.app import launch_app
 from adb_mcp.tools.logs import read_logs
+from adb_mcp.tools.device import device_connect, _deduplicate_devices
 
 
 class TestEscapeText:
@@ -72,3 +74,51 @@ class TestReadLogs:
         read_logs(lines=100)
         args = mock_exec.call_args[0]
         assert "100" in args
+
+
+class TestDeduplicateDevices:
+    def test_removes_duplicate_ips(self):
+        devices = [
+            {"name": "device-a", "host": "192.168.1.10", "port": 40845},
+            {"name": "device-b", "host": "192.168.1.10", "port": 40846},
+        ]
+        result = _deduplicate_devices(devices)
+        assert len(result) == 1
+        assert result[0]["name"] == "device-a"
+
+    def test_keeps_different_ips(self):
+        devices = [
+            {"name": "phone", "host": "192.168.1.10", "port": 40845},
+            {"name": "tablet", "host": "192.168.1.11", "port": 40845},
+        ]
+        result = _deduplicate_devices(devices)
+        assert len(result) == 2
+
+    def test_empty_list(self):
+        assert _deduplicate_devices([]) == []
+
+
+class TestDeviceConnect:
+    def setup_method(self):
+        set_device_serial(None)
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="connected to 192.168.1.10:5555")
+    def test_manual_host_sets_serial(self, mock_exec):
+        device_connect(host="192.168.1.10", port=5555)
+        assert get_device_serial() == "192.168.1.10:5555"
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="connected to 192.168.1.10:40845")
+    @patch("adb_mcp.tools.device.discover_connect_devices", return_value=[
+        {"name": "device-a", "host": "192.168.1.10", "port": 40845},
+        {"name": "device-b", "host": "192.168.1.10", "port": 40846},
+    ])
+    def test_auto_deduplicates_and_sets_serial(self, mock_discover, mock_exec):
+        result = device_connect()
+        # Should only connect once (deduplicated)
+        mock_exec.assert_called_once()
+        assert get_device_serial() == "192.168.1.10:40845"
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="failed to connect")
+    def test_manual_host_no_serial_on_failure(self, mock_exec):
+        device_connect(host="192.168.1.10")
+        assert get_device_serial() is None
