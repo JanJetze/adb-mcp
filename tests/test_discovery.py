@@ -87,9 +87,6 @@ class TestResolveHost:
 
 class TestDiscoverServices:
     @patch("adb_mcp.discovery._DNS_SD", None)
-    def test_raises_without_dns_sd(self):
-        try:
-            discover_services("_adb-tls-connect._tcp.")
-            assert False, "Should have raised"
-        except RuntimeError as e:
-            assert "dns-sd" in str(e)
+    def test_returns_empty_without_dns_sd(self):
+        result = discover_services("_adb-tls-connect._tcp.")
+        assert result == []

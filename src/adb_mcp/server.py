@@ -41,8 +41,11 @@ volume_down, power, or menu.
 - `shell(command)` — run any adb shell command as an escape hatch.
 
 ## Tips
+- Auto-discovery works on macOS. On Linux, the user must provide host and \
+port manually (shown on the wireless debugging screen on the phone).
 - If device_connect() finds nothing, ask the user to check that wireless \
-debugging is enabled and the phone is on the same WiFi network.
+debugging is enabled and the phone is on the same WiFi network. If on \
+Linux, ask for the IP and port.
 - Screenshots are downscaled to 540px wide by default to save tokens. Use \
 max_width to adjust if needed.
 - ui_tree with simplified=True (default) prunes empty containers. Use \

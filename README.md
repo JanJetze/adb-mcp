@@ -15,8 +15,7 @@ The MCP server runs on your machine and calls adb directly. Claude can see your 
 
 ## Prerequisites
 
-- **macOS** (device discovery uses `dns-sd`, a macOS built-in)
-- **adb** — `brew install android-platform-tools`
+- **adb** — `brew install android-platform-tools` (macOS) or `apt install adb` (Linux)
 - **[uv](https://docs.astral.sh/uv/)** (Python package manager)
 - **Android device** with wireless debugging enabled (Android 11+)
 
@@ -44,22 +43,16 @@ Add to your Claude Code settings (`~/.claude/settings.json` under `mcpServers`),
 
 ### 3. Pair and connect your device
 
-Devices are discovered automatically on the network via mDNS — no need to type IP addresses or ports.
-
-**Pair (one-time per device):**
+**On macOS**, devices are discovered automatically via mDNS — no need to type IP addresses or ports:
 
 1. On your phone, tap **Pair device with pairing code** in the wireless debugging screen
 2. Tell Claude the 6-digit code: *"Pair my phone, code 123456"*
+3. Then: *"Connect to my phone"*
 
-That's it — the device's IP and port are found automatically.
+**On Linux**, provide the IP and port shown on the wireless debugging screen:
 
-**Connect (once per session):**
-
-- Ask Claude: *"Connect to my phone"*
-
-The server discovers all paired devices on the network and connects to them. Multiple devices are supported — they'll all be found and connected.
-
-> **Manual override:** If auto-discovery doesn't work on your network, you can still provide the IP and port explicitly: *"Connect to my phone at 192.168.1.x port 5555"*
+1. *"Pair my phone at 192.168.1.100 port 37123, code 123456"*
+2. *"Connect to my phone at 192.168.1.100 port 40845"*
 
 ## Tools
 

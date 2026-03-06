@@ -1,4 +1,3 @@
-import platform
 import re
 import shutil
 import subprocess
@@ -84,10 +83,7 @@ def _resolve_host(hostname: str, timeout: float = 3.0) -> str | None:
 
 def discover_services(service_type: str, timeout: float = 3.0) -> list[dict]:
     if not _DNS_SD:
-        raise RuntimeError(
-            "mDNS discovery requires dns-sd (macOS built-in). "
-            f"On {platform.system()}, provide host and port manually."
-        )
+        return []
     instances = _browse(service_type, timeout)
     results = []
     for name in instances:
