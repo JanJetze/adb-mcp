@@ -8,12 +8,13 @@ mcp = FastMCP(
 You control an Android device via adb over WiFi.
 
 ## Connection workflow (must be done first)
-1. **First-time pairing:** The user opens Settings > Developer options > Wireless \
-debugging > "Pair device with pairing code" on their phone, then gives you the \
-6-digit code. Call `device_pair(code="123456")`. The device is discovered \
-automatically via mDNS — you do NOT need host/port.
-2. **Connect:** Call `device_connect()` each session. Auto-discovers paired devices \
-on the network. No arguments needed.
+1. **First-time pairing (physical device only):** The user opens Settings > \
+Developer options > Wireless debugging > "Pair device with pairing code" on their \
+phone, then gives you the 6-digit code. Call `device_pair(code="123456")`. The \
+device is discovered automatically via mDNS — you do NOT need host/port.
+2. **Connect:** Call `device_connect()` each session. It auto-detects local \
+emulators and USB devices first, then falls back to mDNS network discovery for \
+wireless devices. No arguments needed.
 3. **Verify:** Call `device_status()` to confirm the device is online.
 
 ## Interacting with the screen
@@ -43,11 +44,11 @@ device. Set reinstall=True to replace an existing install while keeping its data
 - `shell(command)` — run any adb shell command as an escape hatch.
 
 ## Tips
-- Auto-discovery works on macOS. On Linux, the user must provide host and \
-port manually (shown on the wireless debugging screen on the phone).
-- If device_connect() finds nothing, ask the user to check that wireless \
-debugging is enabled and the phone is on the same WiFi network. If on \
-Linux, ask for the IP and port.
+- device_connect() detects local emulators automatically — no pairing needed.
+- Auto-discovery for wireless devices works on macOS. On Linux, the user \
+must provide host and port manually.
+- If device_connect() finds nothing, ask the user to check that either a \
+local emulator is running or wireless debugging is enabled on their phone.
 - Screenshots are downscaled to 540px wide by default to save tokens. Use \
 max_width to adjust if needed.
 - ui_tree with simplified=True (default) prunes empty containers. Use \
@@ -66,8 +67,9 @@ def device_pair(code: str, host: str | None = None, port: int | None = None) -> 
 
 @mcp.tool()
 def device_connect(host: str | None = None, port: int | None = None) -> str:
-    """Connect to a device over WiFi debugging. Automatically discovers
-    devices on the network. Provide host/port only as a manual override."""
+    """Connect to a device. Automatically detects local emulators and USB
+    devices first, then falls back to network discovery for wireless devices.
+    Provide host/port only as a manual override."""
     return device.device_connect(host, port)
 
 
