@@ -4,7 +4,7 @@ from adb_mcp.adb import set_device_serial, get_device_serial
 from adb_mcp.tools.input import _escape_text, press_key
 from adb_mcp.tools.app import launch_app
 from adb_mcp.tools.logs import read_logs
-from adb_mcp.tools.device import device_connect, _deduplicate_devices
+from adb_mcp.tools.device import device_connect, _deduplicate_devices, list_devices, set_active_device
 from adb_mcp.tools.app import install_app
 
 
@@ -113,6 +113,43 @@ class TestDeduplicateDevices:
         assert _deduplicate_devices([]) == []
 
 
+class TestListDevices:
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\nemulator-5554\tdevice model:sdk_phone\n192.168.1.10:5555\tdevice model:Pixel_7")
+    def test_returns_all_devices(self, mock_exec):
+        devices = list_devices()
+        assert len(devices) == 2
+        assert devices[0]["serial"] == "emulator-5554"
+        assert devices[1]["serial"] == "192.168.1.10:5555"
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\n")
+    def test_returns_empty_when_no_devices(self, mock_exec):
+        assert list_devices() == []
+
+
+class TestSetActiveDevice:
+    def setup_method(self):
+        set_device_serial(None)
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\nemulator-5554\tdevice model:sdk_phone\n192.168.1.10:5555\tdevice model:Pixel_7")
+    def test_sets_serial(self, mock_exec):
+        result = set_active_device("emulator-5554")
+        assert get_device_serial() == "emulator-5554"
+        assert "sdk_phone" in result
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\nemulator-5554\tdevice model:sdk_phone")
+    def test_rejects_unknown_serial(self, mock_exec):
+        result = set_active_device("nonexistent-1234")
+        assert get_device_serial() is None
+        assert "not found" in result
+        assert "emulator-5554" in result
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\n")
+    def test_rejects_when_no_devices(self, mock_exec):
+        result = set_active_device("emulator-5554")
+        assert "not found" in result
+        assert "none" in result
+
+
 class TestDeviceConnect:
     def setup_method(self):
         set_device_serial(None)
@@ -122,18 +159,40 @@ class TestDeviceConnect:
         device_connect(host="192.168.1.10", port=5555)
         assert get_device_serial() == "192.168.1.10:5555"
 
-    @patch("adb_mcp.tools.device.adb_exec", return_value="connected to 192.168.1.10:40845")
     @patch("adb_mcp.tools.device.discover_connect_devices", return_value=[
         {"name": "device-a", "host": "192.168.1.10", "port": 40845},
         {"name": "device-b", "host": "192.168.1.10", "port": 40846},
     ])
-    def test_auto_deduplicates_and_sets_serial(self, mock_discover, mock_exec):
-        result = device_connect()
-        # Should only connect once (deduplicated)
-        mock_exec.assert_called_once()
-        assert get_device_serial() == "192.168.1.10:40845"
+    @patch("adb_mcp.tools.device._find_local_devices", return_value=[])
+    def test_auto_deduplicates_and_sets_serial(self, mock_find, mock_discover):
+        with patch("adb_mcp.tools.device.adb_exec", return_value="connected to 192.168.1.10:40845") as mock_exec:
+            result = device_connect()
+            # Should only connect once (deduplicated)
+            mock_exec.assert_called_once()
+            assert get_device_serial() == "192.168.1.10:40845"
 
     @patch("adb_mcp.tools.device.adb_exec", return_value="failed to connect")
     def test_manual_host_no_serial_on_failure(self, mock_exec):
         device_connect(host="192.168.1.10")
         assert get_device_serial() is None
+
+    @patch("adb_mcp.tools.device._find_local_devices", return_value=[
+        {"serial": "emulator-5554", "model": "sdk_phone"},
+        {"serial": "192.168.1.10:5555", "model": "Pixel_7"},
+    ])
+    def test_multiple_devices_reports_all(self, mock_find):
+        result = device_connect()
+        assert "set_active_device" in result
+        assert "emulator-5554" in result
+        assert "192.168.1.10:5555" in result
+
+    @patch("adb_mcp.tools.device._find_local_devices", return_value=[
+        {"serial": "emulator-5554", "model": "sdk_phone"},
+        {"serial": "192.168.1.10:5555", "model": "Pixel_7"},
+    ])
+    def test_multiple_devices_keeps_current_selection(self, mock_find):
+        set_device_serial("192.168.1.10:5555")
+        result = device_connect()
+        # Should keep existing selection, not reset to first
+        assert get_device_serial() == "192.168.1.10:5555"
+        assert "(active)" in result

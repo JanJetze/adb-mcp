@@ -43,6 +43,12 @@ device. Set reinstall=True to replace an existing install while keeping its data
 - `read_logs(filter, lines)` — read logcat output, optionally filtered.
 - `shell(command)` — run any adb shell command as an escape hatch.
 
+## Multiple devices
+- When multiple devices are connected (e.g., phone + emulator), \
+`device_connect()` reports all of them.
+- Call `list_devices()` to see all connected devices and which one is active.
+- Call `set_active_device(serial)` to switch which device receives commands.
+
 ## Tips
 - device_connect() detects local emulators automatically — no pairing needed.
 - Auto-discovery for wireless devices works on macOS. On Linux, the user \
@@ -71,6 +77,28 @@ def device_connect(host: str | None = None, port: int | None = None) -> str:
     devices first, then falls back to network discovery for wireless devices.
     Provide host/port only as a manual override."""
     return device.device_connect(host, port)
+
+
+@mcp.tool()
+def list_devices() -> str:
+    """List all connected adb devices with their serial numbers.
+    Use this to see what's available before switching devices."""
+    import json
+    devices = device.list_devices()
+    if not devices:
+        return "No devices connected."
+    from adb_mcp.adb import get_device_serial
+    current = get_device_serial()
+    for d in devices:
+        d["active"] = d["serial"] == current
+    return json.dumps(devices, indent=2)
+
+
+@mcp.tool()
+def set_active_device(serial: str) -> str:
+    """Switch which connected device to target. Get available serials
+    from list_devices(). All subsequent commands will target this device."""
+    return device.set_active_device(serial)
 
 
 @mcp.tool()
