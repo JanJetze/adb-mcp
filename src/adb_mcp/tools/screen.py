@@ -27,6 +27,6 @@ def screenshot(max_width: int = 540) -> tuple[str, str]:
 
 
 def ui_tree(simplified: bool = True) -> str:
-    xml_output = adb_exec("shell", "uiautomator", "dump", "/dev/tty", timeout=15)
+    xml_output = adb_exec("exec-out", "uiautomator", "dump", "/dev/tty", timeout=15)
     parsed = parse_ui_tree(xml_output, simplified=simplified)
     return json.dumps(parsed, indent=2)
