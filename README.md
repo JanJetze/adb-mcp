@@ -60,6 +60,8 @@ Add to your Claude Code settings (`~/.claude/settings.json` under `mcpServers`),
 |------|-------------|
 | `device_pair` | Pair with a device for wireless debugging (one-time) |
 | `device_connect` | Connect to a device over WiFi |
+| `list_devices` | List all connected devices with serials |
+| `set_active_device` | Switch which device to target when multiple are connected |
 | `device_status` | List connected devices |
 | `screenshot` | Capture the screen (returned as image, auto-scaled) |
 | `ui_tree` | Dump the UI hierarchy as structured JSON |

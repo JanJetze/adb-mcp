@@ -64,19 +64,25 @@ def device_connect(host: str | None = None, port: int | None = None) -> str:
     # Check for already-connected local devices (emulators, USB)
     local = _find_local_devices()
     if local:
-        # If we already have a selected device that's still connected, keep it
         current = get_device_serial()
-        if current and any(d["serial"] == current for d in local):
+        # If we already have a selected device that's still connected and it's
+        # the only device, keep it. With multiple devices, always report all.
+        if current and any(d["serial"] == current for d in local) and len(local) == 1:
             return f"Already connected to {current}"
 
-        # Use the first available local device
-        chosen = local[0]
-        set_device_serial(chosen["serial"])
+        # Keep current selection if still valid, otherwise pick the first
+        if current and any(d["serial"] == current for d in local):
+            chosen_serial = current
+        else:
+            chosen_serial = local[0]["serial"]
+            set_device_serial(chosen_serial)
+
         if len(local) == 1:
+            chosen = local[0]
             return f"Connected to {chosen['model']} ({chosen['serial']})"
-        lines = [f"Found {len(local)} local devices, using {chosen['model']} ({chosen['serial']}):"]
+        lines = [f"Found {len(local)} devices. Use set_active_device(serial) to switch:"]
         for d in local:
-            marker = " (selected)" if d["serial"] == chosen["serial"] else ""
+            marker = " (active)" if d["serial"] == chosen_serial else ""
             lines.append(f"  {d['model']} ({d['serial']}){marker}")
         return "\n".join(lines)
 
@@ -106,6 +112,23 @@ def device_connect(host: str | None = None, port: int | None = None) -> str:
     if len(lines) == 1:
         return lines[0]
     return "Found multiple devices:\n" + "\n".join(f"  {l}" for l in lines)
+
+
+def list_devices() -> list[dict]:
+    """Return all connected adb devices with serial and model."""
+    return _find_local_devices()
+
+
+def set_active_device(serial: str) -> str:
+    """Set which device to target for subsequent commands."""
+    devices = _find_local_devices()
+    serials = [d["serial"] for d in devices]
+    if serial not in serials:
+        available = ", ".join(serials) if serials else "none"
+        return f"Device '{serial}' not found. Available devices: {available}"
+    set_device_serial(serial)
+    model = next((d["model"] for d in devices if d["serial"] == serial), serial)
+    return f"Active device set to {model} ({serial})"
 
 
 def device_status() -> str:
