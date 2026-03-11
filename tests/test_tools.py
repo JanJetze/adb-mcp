@@ -210,3 +210,28 @@ class TestDeviceConnect:
         # Should keep existing selection, not reset to first
         assert get_device_serial() == "192.168.1.10:5555"
         assert "(active)" in result
+
+    @patch("adb_mcp.tools.device._pinned_serial", "emulator-5554")
+    @patch("adb_mcp.tools.device._find_local_devices", return_value=[
+        {"serial": "emulator-5554", "model": "sdk_phone"},
+        {"serial": "192.168.1.10:5555", "model": "Pixel_7"},
+    ])
+    def test_pinned_serial_connects_to_pinned_device(self, mock_find):
+        result = device_connect()
+        assert "pinned" in result
+        assert "emulator-5554" in result
+
+    @patch("adb_mcp.tools.device._pinned_serial", "emulator-5556")
+    @patch("adb_mcp.tools.device._find_local_devices", return_value=[
+        {"serial": "emulator-5554", "model": "sdk_phone"},
+    ])
+    def test_pinned_serial_reports_missing_device(self, mock_find):
+        result = device_connect()
+        assert "not found" in result
+        assert "emulator-5556" in result
+
+    @patch("adb_mcp.tools.device._pinned_serial", "emulator-5554")
+    @patch("adb_mcp.tools.device.adb_exec", return_value="connected to 192.168.1.10:5555")
+    def test_pinned_serial_ignored_with_manual_host(self, mock_exec):
+        result = device_connect(host="192.168.1.10", port=5555)
+        assert get_device_serial() == "192.168.1.10:5555"

@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 
@@ -14,7 +15,7 @@ def _find_adb() -> str:
 
 ADB = _find_adb()
 
-_device_serial: str | None = None
+_device_serial: str | None = os.environ.get("ADB_DEVICE_SERIAL")
 
 
 def set_device_serial(serial: str | None) -> None:

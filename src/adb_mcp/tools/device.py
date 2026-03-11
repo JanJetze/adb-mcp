@@ -1,5 +1,9 @@
+import os
+
 from adb_mcp.adb import adb_exec, set_device_serial, get_device_serial
 from adb_mcp.discovery import discover_pairing_devices, discover_connect_devices
+
+_pinned_serial: str | None = os.environ.get("ADB_DEVICE_SERIAL")
 
 
 def device_pair(code: str, host: str | None = None, port: int | None = None) -> str:
@@ -58,6 +62,20 @@ def _find_local_devices() -> list[dict]:
 
 
 def device_connect(host: str | None = None, port: int | None = None) -> str:
+    # If pinned via ADB_DEVICE_SERIAL, verify the device is available
+    if _pinned_serial and not host:
+        devices = _find_local_devices()
+        if any(d["serial"] == _pinned_serial for d in devices):
+            model = next(
+                (d["model"] for d in devices if d["serial"] == _pinned_serial),
+                _pinned_serial,
+            )
+            return f"Connected to pinned device {model} ({_pinned_serial})"
+        return (
+            f"Pinned device '{_pinned_serial}' (from ADB_DEVICE_SERIAL) "
+            f"not found. Available: {', '.join(d['serial'] for d in devices) or 'none'}"
+        )
+
     if host:
         serial = f"{host}:{port or 5555}"
         result = adb_exec("connect", serial, timeout=15)
