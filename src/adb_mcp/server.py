@@ -49,6 +49,12 @@ device. Set reinstall=True to replace an existing install while keeping its data
 - Call `list_devices()` to see all connected devices and which one is active.
 - Call `set_active_device(serial)` to switch which device receives commands.
 
+## Pinning a device
+- Set the `ADB_DEVICE_SERIAL` environment variable to pin this server instance \
+to a specific device (e.g., `ADB_DEVICE_SERIAL=emulator-5554`).
+- When pinned, `device_connect()` only connects to that device, preventing \
+multiple agents from accidentally sharing the same device.
+
 ## Tips
 - device_connect() detects local emulators automatically — no pairing needed.
 - Auto-discovery for wireless devices works on macOS. On Linux, the user \
