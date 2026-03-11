@@ -41,11 +41,15 @@ def _find_local_devices() -> list[dict]:
     output = adb_exec("devices", "-l")
     devices = []
     for line in output.splitlines():
-        if "\tdevice" not in line:
+        # Skip header and empty lines
+        if not line.strip() or line.startswith("List of"):
             continue
-        serial = line.split("\t")[0]
+        parts = line.split()
+        if len(parts) < 2 or parts[1] != "device":
+            continue
+        serial = parts[0]
         model = ""
-        for part in line.split():
+        for part in parts:
             if part.startswith("model:"):
                 model = part.split(":", 1)[1]
                 break

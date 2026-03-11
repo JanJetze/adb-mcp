@@ -121,6 +121,20 @@ class TestListDevices:
         assert devices[0]["serial"] == "emulator-5554"
         assert devices[1]["serial"] == "192.168.1.10:5555"
 
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\nemulator-5554          device product:sdk_phone model:sdk_phone transport_id:1\n192.168.1.10:5555      device product:redfin model:Pixel_5 transport_id:2")
+    def test_returns_all_devices_space_separated(self, mock_exec):
+        devices = list_devices()
+        assert len(devices) == 2
+        assert devices[0]["serial"] == "emulator-5554"
+        assert devices[0]["model"] == "sdk_phone"
+        assert devices[1]["serial"] == "192.168.1.10:5555"
+        assert devices[1]["model"] == "Pixel_5"
+
+    @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\nemulator-5554          unauthorized transport_id:1")
+    def test_skips_unauthorized_devices(self, mock_exec):
+        devices = list_devices()
+        assert len(devices) == 0
+
     @patch("adb_mcp.tools.device.adb_exec", return_value="List of devices attached\n")
     def test_returns_empty_when_no_devices(self, mock_exec):
         assert list_devices() == []
